@@ -1,34 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <CheatTable CheatEngineTableVersion="45">
-  <CheatEntries>
-    <CheatEntry>
-      <ID>0</ID>
-      <Description>"CharacterData Array Scanner"</Description>
-      <LastState Activated="1"/>
-      <VariableType>Auto Assembler Script</VariableType>
-      <AssemblerScript>        [ENABLE]
-        luacall(executeScript())
-
-        [DISABLE]
-        luacall(cleanupScript())
-    
-</AssemblerScript>
-      <CheatEntries>
-        <CheatEntry>
-          <ID>3</ID>
-          <Description>"CharacterData Array @ 266da7f0d80"</Description>
-          <VariableType>8 Bytes</VariableType>
-          <Address>266DA7F0D80</Address>
-        </CheatEntry>
-      </CheatEntries>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>2</ID>
-      <Description>"No description"</Description>
-      <VariableType>4 Bytes</VariableType>
-      <Address>2669765B31C</Address>
-    </CheatEntry>
-  </CheatEntries>
+  <CheatEntries/>
   <UserdefinedSymbols/>
   <LuaScript>function getCurrentDialogCharacter(charactersManagerAddress)
     local currentDialogCharacter = readInteger(charactersManagerAddress + 0x78)

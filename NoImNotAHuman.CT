@@ -1,0 +1,370 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="45">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"CharacterData Array Scanner"</Description>
+      <LastState Activated="1"/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>        [ENABLE]
+        luacall(executeScript())
+
+        [DISABLE]
+        luacall(cleanupScript())
+    
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>3</ID>
+          <Description>"CharacterData Array @ 266da7f0d80"</Description>
+          <VariableType>8 Bytes</VariableType>
+          <Address>266DA7F0D80</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>2</ID>
+      <Description>"No description"</Description>
+      <VariableType>4 Bytes</VariableType>
+      <Address>2669765B31C</Address>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+  <LuaScript>function getCurrentDialogCharacter(charactersManagerAddress)
+    local currentDialogCharacter = readInteger(charactersManagerAddress + 0x78)
+    return currentDialogCharacter
+end
+function FindCurrentCitizens()
+    local randomizerClass = mono_findClass("Assembly-CSharp", "CharactersManager")
+    if randomizerClass == nil then
+        print("CharactersManager class not found!")
+        return nil
+    end
+
+    local randomizerInstances = mono_class_findInstancesOfClassListOnly(randomizerClass)
+    if randomizerInstances == nil or #randomizerInstances == 0 then
+        print("GameplayRandomizer instances not found!")
+        return nil
+    end
+
+    print("Found " .. #randomizerInstances .. " CharactersManager instances")
+
+    local saverClass = mono_findClass("Assembly-CSharp", "CharactersManagerSaveData")
+    if saverClass == nil then
+        print("CharactersManagerSaveData class not found!")
+        return nil
+    end
+
+    local saverInstances = mono_class_findInstancesOfClassListOnly(saverClass)
+    if saverInstances == nil or #saverInstances == 0 then
+        print("CharactersManagerSaveData instances not found!")
+        return nil
+    end
+
+    print("Found " .. #saverInstances .. " CharactersManagerSaveData instances")
+    local targetRandomizer = nil
+    local targetSaverAddr = nil
+
+    for i, randomizerAddr in ipairs(randomizerInstances) do
+        local saverAddr = readPointer(randomizerAddr + 0x18)
+        for j, validSaverAddr in ipairs(saverInstances) do
+            if saverAddr == validSaverAddr then
+                targetRandomizer = randomizerAddr
+                targetSaverAddr = saverAddr
+                break
+            end
+        end
+        if targetRandomizer ~= nil then break end
+    end
+
+    if targetRandomizer == nil then
+        print("Correct CharactersManager not found!")
+        return nil
+    end
+
+    print(string.format("Found target CharactersManager: %X", targetRandomizer))
+    print(string.format("Found target CharactersManagerSaveData: %X", targetSaverAddr))
+
+    local characterInside = readPointer(targetSaverAddr + 0x10)
+    print(string.format("Found characterInside: %X", characterInside))
+    local size = readInteger(characterInside + 0x18)
+    print(string.format("Found size: %d", size))
+    local ECharacterArrayAddr = readPointer(characterInside + 0x10)
+    ids = {}
+    for i = 0,size-1 do
+        table.insert(ids, readInteger(ECharacterArrayAddr + 0x20 + i * 0x4))
+    end
+    return ids, getCurrentDialogCharacter(targetRandomizer)
+end
+
+function FindAndCheckImposters()
+    local randomizerClass = mono_findClass("Assembly-CSharp", "GameplayRandomizer")
+    if randomizerClass == nil then
+        print("GameplayRandomizer class not found!")
+        return nil
+    end
+
+    local randomizerInstances = mono_class_findInstancesOfClassListOnly(randomizerClass)
+    if randomizerInstances == nil or #randomizerInstances == 0 then
+        print("GameplayRandomizer instances not found!")
+        return nil
+    end
+
+    print("Found " .. #randomizerInstances .. " GameplayRandomizer instances")
+
+    local saverClass = mono_findClass("Assembly-CSharp", "GameplayRandomizerSaveData")
+    if saverClass == nil then
+        print("GameplayRandomizerSavedData class not found!")
+        return nil
+    end
+
+    local saverInstances = mono_class_findInstancesOfClassListOnly(saverClass)
+    if saverInstances == nil or #saverInstances == 0 then
+        print("GameplayRandomizerSavedData instances not found!")
+        return nil
+    end
+
+    print("Found " .. #saverInstances .. " GameplayRandomizerSavedData instances")
+    local targetRandomizer = nil
+    local targetSaverAddr = nil
+
+    for i, randomizerAddr in ipairs(randomizerInstances) do
+        local saverAddr = readPointer(randomizerAddr + 0x18)
+        for j, validSaverAddr in ipairs(saverInstances) do
+            if saverAddr == validSaverAddr then
+                targetRandomizer = randomizerAddr
+                targetSaverAddr = saverAddr
+                break
+            end
+        end
+        if targetRandomizer ~= nil then break end
+    end
+
+    if targetRandomizer == nil then
+        print("Correct GameplayRandomizer not found!")
+        return nil
+    end
+
+    print(string.format("Found target GameplayRandomizer: %X", targetRandomizer))
+    local charactersList = readPointer(targetRandomizer + 0x28)
+    print(string.format("Found target charactersList: %X", charactersList))
+    return charactersList
+end
+
+function defineCharacterDataStructure()
+    local structure = [[
+struct CharacterData
+  +0x10: uint64 vtbl;
+  +0x18: int32 characterType;
+  +0x20: uint64 poses;
+  +0x28: uint64 emotions;
+  +0x30: int32 room;
+  +0x38: uint64 nameLocalizationKey;
+  +0x40: uint64 corpseMask;
+  +0x48: uint64 handsSpriteHuman;
+  +0x50: uint64 eyeSpriteHuman;
+  +0x58: uint64 teethSpriteHuman;
+  +0x60: uint64 earHuman;
+  +0x68: uint64 armpitHuman;
+  +0x70: uint64 photoHuman;
+  +0x78: uint64 handsSpriteImposter;
+  +0x80: uint64 eyeSpriteImposter;
+  +0x88: uint64 teethSpriteImposter;
+  +0x90: uint64 earImposter;
+  +0x98: uint64 armpitImposter;
+  +0xa0: uint64 photoImposter;
+  +0xa8: int32 knockSound;
+  +0xac: int32 entranceTheme;
+  +0xb0: uint64 nightRoomSound;
+  +0xb8: bool isImposter;
+  +0xbc: float entranceScale;
+  +0xc0: float roomScale;
+  +0xc4: bool canExile;
+  +0xc5: bool isPreset;
+  +0xc8: int32 place;
+  +0xcc: bool isStatusRandomlyGenerated;
+  +0xd0: uint64 visits;
+  +0xd8: uint64 allowedDays;
+  +0xe0: int32 minimumGamesCompletedToAppear;
+  +0xe8: uint64 quote;
+  +0x100: float FEMARatingBonus;
+struct ends
+]]
+    autoAssemble(structure)
+end
+
+function createFieldRecord(parentRecord, offset, fieldName, fieldType)
+    local record = getAddressList().createMemoryRecord()
+    record.Description = fieldName
+    record.Address = string.format(''..parentRecord.Address..'+%x', offset)
+    record.Type = fieldType
+    record.appendToEntry(parentRecord)
+    return record
+end
+
+function createDetailedStructure(parentRecord)
+    createFieldRecord(parentRecord, 0x00 + 0x10, 'vtbl', vtQword)
+    createFieldRecord(parentRecord, 0x08 + 0x10, 'characterType', vtDword)
+    createFieldRecord(parentRecord, 0x10 + 0x10, 'poses', vtQword)
+    createFieldRecord(parentRecord, 0x18 + 0x10, 'emotions', vtQword)
+    createFieldRecord(parentRecord, 0x20 + 0x10, 'room', vtDword)
+    createFieldRecord(parentRecord, 0x28 + 0x10, 'nameLocalizationKey', vtQword)
+    createFieldRecord(parentRecord, 0x30 + 0x10, 'corpseMask', vtQword)
+    createFieldRecord(parentRecord, 0x38 + 0x10, 'handsSpriteHuman', vtQword)
+    createFieldRecord(parentRecord, 0x40 + 0x10, 'eyeSpriteHuman', vtQword)
+    createFieldRecord(parentRecord, 0x48 + 0x10, 'teethSpriteHuman', vtQword)
+    createFieldRecord(parentRecord, 0x50 + 0x10, 'earHuman', vtQword)
+    createFieldRecord(parentRecord, 0x58 + 0x10, 'armpitHuman', vtQword)
+    createFieldRecord(parentRecord, 0x60 + 0x10, 'photoHuman', vtQword)
+    createFieldRecord(parentRecord, 0x68 + 0x10, 'handsSpriteImposter', vtQword)
+    createFieldRecord(parentRecord, 0x70 + 0x10, 'eyeSpriteImposter', vtQword)
+    createFieldRecord(parentRecord, 0x78 + 0x10, 'teethSpriteImposter', vtQword)
+    createFieldRecord(parentRecord, 0x80 + 0x10, 'earImposter', vtQword)
+    createFieldRecord(parentRecord, 0x88 + 0x10, 'armpitImposter', vtQword)
+    createFieldRecord(parentRecord, 0x90 + 0x10, 'photoImposter', vtQword)
+    createFieldRecord(parentRecord, 0x98 + 0x10, 'knockSound', vtDword)
+    createFieldRecord(parentRecord, 0x9c + 0x10, 'entranceTheme', vtDword)
+    createFieldRecord(parentRecord, 0xa0 + 0x10, 'nightRoomSound', vtQword)
+    createFieldRecord(parentRecord, 0xa8 + 0x10, 'isImposter', vtByte)
+    createFieldRecord(parentRecord, 0xac + 0x10, 'entranceScale', vtSingle)
+    createFieldRecord(parentRecord, 0xb0 + 0x10, 'roomScale', vtSingle)
+    createFieldRecord(parentRecord, 0xb4 + 0x10, 'canExile', vtByte)
+    createFieldRecord(parentRecord, 0xb5 + 0x10, 'isPreset', vtByte)
+    createFieldRecord(parentRecord, 0xb8 + 0x10, 'place', vtDword)
+    createFieldRecord(parentRecord, 0xbc + 0x10, 'isStatusRandomlyGenerated', vtByte)
+    createFieldRecord(parentRecord, 0xc0 + 0x10, 'visits', vtQword)
+    createFieldRecord(parentRecord, 0xc8 + 0x10, 'allowedDays', vtQword)
+    createFieldRecord(parentRecord, 0xd0 + 0x10, 'minimumGamesCompletedToAppear', vtDword)
+    createFieldRecord(parentRecord, 0xd8 + 0x10, 'quote', vtQword)
+    createFieldRecord(parentRecord, 0xf0 + 0x10, 'FEMARatingBonus', vtSingle)
+
+    return structRecord
+end
+
+function destroyDetailedStructure(parentRecord)
+    -- Удаляем все дочерние записи
+    while parentRecord.Count &gt; 0 do
+        local child = parentRecord.Child[0]
+        if child then
+            child.destroy()
+        end
+    end
+end
+
+
+function createArrayElementRecord(arrayAddress, index, parentRecord)
+    local elementRecord = getAddressList().createMemoryRecord()
+    elementRecord.Description = string.format('CharacterData[%d] Pointer', index)
+    elementRecord.Address = string.format('[%x+%x]', arrayAddress, 0x20 + index * 8)
+    elementRecord.Type = vtQword
+    elementRecord.appendToEntry(parentRecord)
+
+elementRecord.OnActivate = function() elementRecord.Active = true
+createDetailedStructure(elementRecord) return true end
+elementRecord.OnDeactivate = function() elementRecord.Active = false
+destroyDetailedStructure(elementRecord) return false end
+    return elementRecord
+end
+
+
+function scanForCharacterDataArray()
+    local possibleAddress = FindAndCheckImposters()
+    if possibleAddress and readQword(possibleAddress) ~= 0 then
+        return possibleAddress
+    end
+    return nil
+end
+
+function executeScript()
+    local mainRecord = getAddressList().getMemoryRecordByDescription('CharacterData Array Scanner')
+    if not mainRecord then return end
+
+    defineCharacterDataStructure()
+
+    local arrayAddress = scanForCharacterDataArray()
+    if not arrayAddress then
+        showMessage('Не удалось найти массив CharacterData!')
+        return
+    end
+
+    local arrayRecord = getAddressList().createMemoryRecord()
+    arrayRecord.Description = string.format('CharacterData Array @ %x', arrayAddress)
+    arrayRecord.Address = arrayAddress
+    arrayRecord.Type = vtQword
+    arrayRecord.appendToEntry(mainRecord)
+    local currentCitizens, currentCharacter = FindCurrentCitizens()
+
+    for i = 0, 59 do
+        local elementAddress = readPointer(arrayAddress + 0x20 + i * 8)
+        local isimposter = readByte(elementAddress + 0xb8)
+        local room = readByte(elementAddress + 0xc5)
+        local characterType = readInteger(elementAddress + 0x18)
+        if characterType == currentCharacter then
+        if isimposter &gt; 0 then
+          print("Imposter")
+        else
+            print("friendly")
+        end
+        end
+        for _,v in pairs(currentCitizens) do
+            if v == characterType then
+               if isimposter &gt; 0 then
+                  local elementRecord = createArrayElementRecord(arrayAddress, i, mainRecord)
+                  end
+          break
+         end
+         end
+
+    end
+end
+
+function cleanupScript()
+    local mainRecord = getAddressList().getMemoryRecordByDescription('CharacterData Array Scanner')
+    if not mainRecord then return end
+
+    -- Удаляем все дочерние записи
+    while mainRecord.Count &gt; 0 do
+        local child = mainRecord.Child[0]
+        if child then
+            child.destroy()
+        end
+    end
+end
+
+function createMainScriptRecord()
+    local mainRecord = getAddressList().createMemoryRecord()
+    mainRecord.Description = 'CharacterData Array Scanner'
+    mainRecord.Type = vtAutoAssembler
+    mainRecord.Script = [[
+        [ENABLE]
+        luacall(executeScript())
+
+        [DISABLE]
+        luacall(cleanupScript())
+    ]]
+
+    return mainRecord
+end
+
+function init()
+    local process = getProcessIDFromProcessName('NoImNotAHuman.exe')
+    if process == nil then
+        showMessage('Процесс NoImNotAHuman.exe не найден! Запустите игру сначала.')
+        return
+    end
+
+    openProcess(process)
+
+    local existingRecord = getAddressList().getMemoryRecordByDescription('CharacterData Array Scanner')
+    if not existingRecord then
+        createMainScriptRecord()
+        showMessage('Запись "CharacterData Array Scanner" создана. Активируйте её для сканирования.')
+    else
+        showMessage('Запись уже существует!')
+    end
+end
+LaunchMonoDataCollector()
+init()
+
+</LuaScript>
+</CheatTable>

@@ -1,6 +1,23 @@
 # NoImNotAHumanCheatEngineTable
-easy cheat for NINAH for detecting enemies
+## Easy Cheat for NINAH: Enemy Detection
 
-Run the game (it doesnt work in main manu). Before use activate Mono feature after opening NoImNotAHuman.exe in cheatengine: CheatEngine -> Mono -> Activate mono features. Then load this table. When you are in dialogue with someone, press on record and in console will be wrote is them imposter or not, also is lists id's of imposters in your house. Deactivate and Activate again for new dialogue.
+## Usage: 
+- This cheat only works in-game, not from the main menu.
 
-Also, it doesnt work if its second run and e.g, so, if u ruined run, restart NINAH and activate cheat with instructions before. 
+## Setup:
+
+- Open the game executable (NoImNotAHuman.exe) in Cheat Engine.
+
+- In Cheat Engine, enable Mono > Activate Mono Features.
+
+- Then, load this table.
+
+## How to Use:
+
+- When you are in a dialogue, activate cheat.
+
+- The console will log whether the character is an imposter and will also list the IDs of all imposters currently in your house.
+
+## Important Note:
+
+- The cheat may not work on a second playthrough or after a failed run. If it stops working, completely restart the game and reactivate the cheat using the steps above.

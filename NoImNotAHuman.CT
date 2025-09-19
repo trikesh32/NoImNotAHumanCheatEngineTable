@@ -118,6 +118,7 @@ function FindAndCheckImposters()
     end
 
     print(string.format("Found target GameplayRandomizer: %X", targetRandomizer))
+    detonateImpostersPercent(targetRandomizer)
     local charactersList = readPointer(targetRandomizer + 0x28)
     print(string.format("Found target charactersList: %X", charactersList))
     return charactersList
@@ -335,6 +336,12 @@ function init()
         showMessage('Запись уже существует!')
     end
 end
+
+function detonateImpostersPercent(gameRandomizer)
+    settingsAddr = readPointer(gameRandomizer + 0x20)
+    writeQword(settingsAddr + 0x20, 0x0)
+end
+
 LaunchMonoDataCollector()
 init()
 
